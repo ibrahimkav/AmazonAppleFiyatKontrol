@@ -18,6 +18,22 @@ from scraper import AmazonScraper, ProductSnapshot
 # CMD / log dosyasında satırların hemen görünmesi (alt süreçler için; ana iş -u ile çalıştırmak)
 os.environ.setdefault("PYTHONUNBUFFERED", "1")
 
+ACCESSORY_TOKENS = (
+    "kilif",
+    "kılıf",
+    "ekran koruyucu",
+    "camera lens",
+    "lens protector",
+    "tempered glass",
+    "case",
+    "cover",
+    "kapak",
+    "charger",
+    "sarj",
+    "şarj",
+    "kablo",
+)
+
 
 def _effective_best_price(snapshot: ProductSnapshot) -> float | None:
     prices: list[float] = []
@@ -252,6 +268,55 @@ def _missing_parts(snapshot: ProductSnapshot) -> str:
     return ", ".join(missing) if missing else "none"
 
 
+def _normalize_text(s: str) -> str:
+    x = (s or "").lower()
+    repl = {
+        "ı": "i",
+        "ğ": "g",
+        "ü": "u",
+        "ş": "s",
+        "ö": "o",
+        "ç": "c",
+    }
+    for k, v in repl.items():
+        x = x.replace(k, v)
+    return x
+
+
+def _is_relevant_listing(product_name: str, snapshot_title: str) -> bool:
+    pn = _normalize_text(product_name)
+    st = _normalize_text(snapshot_title)
+    if not st:
+        return True
+    if "iphone" in pn and "iphone" not in st:
+        return False
+    if any(token in st for token in ACCESSORY_TOKENS):
+        return False
+    return True
+
+
+def _sanitize_snapshot_prices(product_name: str, snapshot: ProductSnapshot) -> ProductSnapshot:
+    best = _effective_best_price(snapshot)
+    min_valid = 10_000.0 if "iphone" in _normalize_text(product_name) else 100.0
+    if best is None or best >= min_valid:
+        return snapshot
+    _log(
+        f"[Filter] {product_name}: şüpheli düşük fiyat elendi "
+        f"({_fmt_try(best)} < {_fmt_try(min_valid)})"
+    )
+    return ProductSnapshot(
+        title=snapshot.title,
+        url=snapshot.url,
+        warehouse_price=None,
+        normal_price=None,
+        warehouse_condition=snapshot.warehouse_condition,
+        image_url=snapshot.image_url,
+        normal_price_source_count=snapshot.normal_price_source_count,
+        warehouse_price_source_count=snapshot.warehouse_price_source_count,
+        condition_confidence=snapshot.condition_confidence,
+    )
+
+
 async def process_product_threshold(
     *,
     scraper: AmazonScraper | None,
@@ -280,6 +345,10 @@ async def process_product_threshold(
     except Exception as exc:
         _log(f"[Scraper] Failed {name}: {exc}")
         return
+    if not _is_relevant_listing(name, snapshot.title):
+        _log(f"[Filter] {name}: alakasız ürün eşleşmesi atlandı | başlık={snapshot.title}")
+        return
+    snapshot = _sanitize_snapshot_prices(name, snapshot)
 
     _log(
         f"[Scraper] {name}: sayfa fiyatları — en düşük: {_fmt_try(_effective_best_price(snapshot))}, "

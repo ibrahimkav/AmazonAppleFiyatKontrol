@@ -26,7 +26,13 @@ python src/main.py
 
 - **Ürün başına** `alert_below_try` (TL): ödeme fiyatı bu değerin altına/altına inince uyarı.
 - **Ürün başına** `alert_discount_below_normal_try` (TL): sayfadaki üst fiyat ile düşük fiyat arasındaki fark en az bu kadar TL ise uyarı (ör. iPhone için 10000).
+- Ürün linklerini mümkünse `https://www.amazon.com.tr/dp/ASIN` biçiminde girin.
 
 Varsayılanlar `.env` içinde `DEFAULT_ALERT_BELOW_TRY` / `DEFAULT_ALERT_DISCOUNT_TRY` ile verilebilir.
 
 Amazon HTML’i değişebilir; fiyat okunamazsa `src/scraper.py` seçicileri güncellenmelidir.
+
+## Notlar
+
+- Bot ürün sayfasındaki kardeş varyantları (renk/depolama) da sınırlı sayıda tarar ve fiyatı buna göre birleştirir.
+- Aksesuar başlıkları (kılıf, ekran koruyucu vb.) ve iPhone için gerçek dışı düşük fiyatlar filtrelenir.

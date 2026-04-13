@@ -1,5 +1,25 @@
 [
   {
+    "name": "Apple iPhone 17 Pro Max",
+    "url": "https://www.amazon.com.tr/dp/B0FQFVL6DK",
+    "alert_discount_below_normal_try": 10000
+  },
+  {
+    "name": "Apple iPhone 17 Pro",
+    "url": "https://www.amazon.com.tr/dp/B0FQFYN66J",
+    "alert_discount_below_normal_try": 10000
+  },
+  {
+    "name": "Apple iPhone 17",
+    "url": "https://www.amazon.com.tr/dp/B0FQFBXXWF",
+    "alert_discount_below_normal_try": 10000
+  },
+  {
+    "name": "Apple iPhone 17 Plus",
+    "url": "https://www.amazon.com.tr/dp/B0FQFBXXWF",
+    "alert_discount_below_normal_try": 10000
+  },
+  {
     "name": "Apple iPhone 16 Pro Max",
     "url": "https://www.amazon.com.tr/dp/B0DGJTCP26",
     "alert_discount_below_normal_try": 10000
@@ -57,16 +77,6 @@
   {
     "name": "Apple iPhone 12",
     "url": "https://www.amazon.com.tr/dp/B09G9RQTP3",
-    "alert_discount_below_normal_try": 10000
-  },
-  {
-    "name": "Apple iPhone 11",
-    "url": "https://www.amazon.com.tr/dp/B0CS9S4744",
-    "alert_discount_below_normal_try": 10000
-  },
-  {
-    "name": "Apple iPhone SE 3",
-    "url": "https://www.amazon.com.tr/dp/B099ML7RB4",
     "alert_discount_below_normal_try": 10000
   }
 ]

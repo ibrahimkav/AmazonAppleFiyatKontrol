@@ -98,9 +98,16 @@ class AmazonScraper:
 
     async def close(self) -> None:
         if self._browser:
-            await self._browser.close()
+            try:
+                await self._browser.close()
+            except Exception:
+                # Driver zaten kapanmışsa sessizce devam et.
+                pass
         if self._playwright:
-            await self._playwright.stop()
+            try:
+                await self._playwright.stop()
+            except Exception:
+                pass
 
     async def _new_page(self) -> Page:
         if not self._browser:
@@ -114,6 +121,21 @@ class AmazonScraper:
             await page.goto(url, wait_until="domcontentloaded", timeout=45_000)
             html = await page.content()
             snapshot = self._extract(name=name, url=url, html=html)
+
+            # On product pages, sample sibling variant ASINs (color/storage) and merge prices.
+            variant_urls: list[str] = []
+            if "/dp/" in snapshot.url:
+                variant_urls = self._extract_variant_urls_from_product(
+                    html, base_url="https://www.amazon.com.tr", current_url=snapshot.url
+                )
+            for variant_url in variant_urls[:6]:
+                try:
+                    await page.goto(variant_url, wait_until="domcontentloaded", timeout=45_000)
+                    v_html = await page.content()
+                    v_snap = self._extract(name=name, url=variant_url, html=v_html)
+                    snapshot = self._merge_snapshots(primary=snapshot, fallback=v_snap)
+                except Exception:
+                    continue
 
             # If this is a search page (or extraction fails), try first product detail page.
             if (snapshot.normal_price is None or snapshot.warehouse_price is None) and "/s?" in url:
@@ -165,6 +187,26 @@ class AmazonScraper:
                     return href
                 return f"{base_url}{href}"
         return None
+
+    def _extract_variant_urls_from_product(
+        self,
+        html: str,
+        *,
+        base_url: str,
+        current_url: str,
+    ) -> list[str]:
+        cur_asin = self._extract_asin(current_url)
+        seen: set[str] = set()
+        urls: list[str] = []
+        for asin in re.findall(r"/dp/([A-Z0-9]{10})", html, flags=re.IGNORECASE):
+            a = asin.upper()
+            if a == cur_asin:
+                continue
+            if a in seen:
+                continue
+            seen.add(a)
+            urls.append(f"{base_url}/dp/{a}")
+        return urls
 
     def _extract(self, *, name: str, url: str, html: str) -> ProductSnapshot:
         soup = BeautifulSoup(html, "html.parser")
