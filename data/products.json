@@ -1,23 +1,33 @@
 [
   {
+    "name": "Apple iPhone 17",
+    "url": "https://www.amazon.com.tr/s?k=Apple+iPhone+17",
+    "alert_discount_below_normal_try": 10000
+  },
+  {
     "name": "Apple iPhone 16 Pro",
-    "url": "https://www.amazon.com.tr/s?k=Apple+iPhone+16+Pro"
+    "url": "https://www.amazon.com.tr/s?k=Apple+iPhone+16+Pro",
+    "alert_discount_below_normal_try": 10000
   },
   {
     "name": "Apple iPhone 16",
-    "url": "https://www.amazon.com.tr/s?k=Apple+iPhone+16"
+    "url": "https://www.amazon.com.tr/s?k=Apple+iPhone+16",
+    "alert_discount_below_normal_try": 10000
   },
   {
     "name": "Apple iPhone 15 Pro",
-    "url": "https://www.amazon.com.tr/s?k=Apple+iPhone+15+Pro"
+    "url": "https://www.amazon.com.tr/s?k=Apple+iPhone+15+Pro",
+    "alert_discount_below_normal_try": 10000
   },
   {
     "name": "Apple iPhone 15",
-    "url": "https://www.amazon.com.tr/s?k=Apple+iPhone+15"
+    "url": "https://www.amazon.com.tr/s?k=Apple+iPhone+15",
+    "alert_discount_below_normal_try": 10000
   },
   {
     "name": "Apple iPhone 14",
-    "url": "https://www.amazon.com.tr/s?k=Apple+iPhone+14"
+    "url": "https://www.amazon.com.tr/s?k=Apple+iPhone+14",
+    "alert_discount_below_normal_try": 10000
   },
   {
     "name": "Apple AirPods Pro 2",
@@ -80,83 +90,11 @@
     "url": "https://www.amazon.com.tr/s?k=Apple+Studio+Display"
   },
   {
-    "name": "Apple Magic Keyboard",
-    "url": "https://www.amazon.com.tr/s?k=Apple+Magic+Keyboard"
-  },
-  {
-    "name": "Apple Magic Mouse",
-    "url": "https://www.amazon.com.tr/s?k=Apple+Magic+Mouse"
-  },
-  {
-    "name": "Apple Pencil Pro",
-    "url": "https://www.amazon.com.tr/s?k=Apple+Pencil+Pro"
-  },
-  {
-    "name": "Apple Pencil USB-C",
-    "url": "https://www.amazon.com.tr/s?k=Apple+Pencil+USB-C"
-  },
-  {
-    "name": "Apple MagSafe Charger",
-    "url": "https://www.amazon.com.tr/s?k=Apple+MagSafe+Charger"
-  },
-  {
-    "name": "Apple USB-C Power Adapter",
-    "url": "https://www.amazon.com.tr/s?k=Apple+USB-C+Power+Adapter"
-  },
-  {
-    "name": "Apple USB-C Cable",
-    "url": "https://www.amazon.com.tr/s?k=Apple+USB-C+Cable"
-  },
-  {
     "name": "Apple TV 4K",
     "url": "https://www.amazon.com.tr/s?k=Apple+TV+4K"
   },
   {
     "name": "Apple HomePod Mini",
     "url": "https://www.amazon.com.tr/s?k=Apple+HomePod+Mini"
-  },
-  {
-    "name": "Amazon TR Apple Tum Urunler",
-    "url": "https://www.amazon.com.tr/s?k=Apple"
-  },
-  {
-    "name": "Logitech G Pro X Wireless Headset",
-    "url": "https://www.amazon.com.tr/s?k=Logitech+G+Pro+X+Wireless+Headset"
-  },
-  {
-    "name": "Logitech G435 Wireless Gaming Headset",
-    "url": "https://www.amazon.com.tr/s?k=Logitech+G435+Wireless+Gaming+Headset"
-  },
-  {
-    "name": "Logitech G733 Wireless Headset",
-    "url": "https://www.amazon.com.tr/s?k=Logitech+G733+Wireless+Headset"
-  },
-  {
-    "name": "Logitech G535 Wireless Headset",
-    "url": "https://www.amazon.com.tr/s?k=Logitech+G535+Wireless+Headset"
-  },
-  {
-    "name": "Logitech H390 USB Headset",
-    "url": "https://www.amazon.com.tr/s?k=Logitech+H390+USB+Headset"
-  },
-  {
-    "name": "Logitech Zone Vibe 100",
-    "url": "https://www.amazon.com.tr/s?k=Logitech+Zone+Vibe+100"
-  },
-  {
-    "name": "Logitech Zone Wired",
-    "url": "https://www.amazon.com.tr/s?k=Logitech+Zone+Wired"
-  },
-  {
-    "name": "Logitech Earbuds",
-    "url": "https://www.amazon.com.tr/s?k=Logitech+kulaklik"
-  },
-  {
-    "name": "Logitech G G522",
-    "url": "https://www.amazon.com.tr/s?k=Logitech+G+G522"
-  },
-  {
-    "name": "Logitech G G522 Warehouse Direct",
-    "url": "https://www.amazon.com.tr/Logitech-LIGHTSPEED-Kulakl%C4%B1%C4%9F%C4%B1-Ayd%C4%B1nlatmal%C4%B1-Senkronize/dp/B0F2JFN2VW/ref=sr_1_2?m=A215JX4S9CANSO&s=warehouse-deals&sr=8-2&srs=44219324031"
   }
 ]

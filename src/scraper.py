@@ -267,3 +267,9 @@ class AmazonScraper:
             warehouse_price_source_count=warehouse_price_source_count,
             condition_confidence=condition_confidence,
         )
+
+
+def snapshot_from_html(*, name: str, url: str, html: str) -> ProductSnapshot:
+    """Playwright olmadan yalnızca HTML metninden fiyat çıkar (urllib/Groq yolu)."""
+    scraper = AmazonScraper(user_agent="")
+    return scraper._extract(name=name, url=url, html=html)
