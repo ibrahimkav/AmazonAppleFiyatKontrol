@@ -22,6 +22,12 @@ Proje kökünden:
 python src/main.py
 ```
 
+## Railway Deploy
+
+- `railway.json` içinde build adımı Playwright Chromium kurulumunu otomatik yapar.
+- Başlatma komutu: `python src/main.py`
+- Python sürümü `.python-version` ile `3.12` olarak sabitlenmiştir.
+
 ## Yapılandırma
 
 - **Ürün başına** `alert_below_try` (TL): ödeme fiyatı bu değerin altına/altına inince uyarı.
