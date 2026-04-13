@@ -21,12 +21,6 @@ class Settings:
     default_alert_below_try: float
     default_alert_discount_try: float
     quiet_threshold_skips: bool
-    groq_api_key: str
-    groq_model: str
-    # Groq ücretsiz TPM düşük; ardışık çağrılar arası bekleme (saniye)
-    groq_min_interval_seconds: float
-    # True: fiyat sorgusu Groq LLM (+ isteğe bağlı hafif HTTP); Playwright yok
-    use_groq_price_engine: bool
 
 
 def load_settings() -> Settings:
@@ -53,26 +47,6 @@ def load_settings() -> Settings:
         "yes",
         "on",
     }
-    groq_api_key = os.getenv("GROQ_API_KEY", "").strip()
-    groq_model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile").strip()
-    # Ücretsiz TPM: çok düşük değer 429 verir; HTML’den fiyat varsa Groq zaten atlanır
-    groq_min_interval_seconds = float(os.getenv("GROQ_MIN_INTERVAL_SECONDS", "12"))
-    pe = os.getenv("PRICE_ENGINE", "auto").strip().lower()
-    remote_names = {
-        "groq",
-        "llm",
-        "gemini",
-        "gemini_search",
-        "google",
-    }
-    if pe in remote_names:
-        use_groq_price_engine = bool(groq_api_key)
-    elif pe in {"playwright", "browser", "local"}:
-        use_groq_price_engine = False
-    else:
-        # auto: GROQ_API_KEY varsa Groq, yoksa Playwright
-        use_groq_price_engine = bool(groq_api_key)
-
     raw_chat_ids = os.getenv("TELEGRAM_CHAT_IDS", "").strip()
     if not raw_chat_ids:
         raw_chat_ids = os.getenv("TELEGRAM_CHAT_ID", "").strip()
@@ -92,8 +66,4 @@ def load_settings() -> Settings:
         default_alert_below_try=default_alert_below_try,
         default_alert_discount_try=default_alert_discount_try,
         quiet_threshold_skips=quiet_threshold_skips,
-        groq_api_key=groq_api_key,
-        groq_model=groq_model,
-        groq_min_interval_seconds=groq_min_interval_seconds,
-        use_groq_price_engine=use_groq_price_engine,
     )

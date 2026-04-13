@@ -8,17 +8,10 @@ import random
 import re
 import sys
 import time
-from functools import partial
 from pathlib import Path
 from typing import Any
 
 from config import load_settings
-from groq_extra import generate_alert_comment
-from groq_price import (
-    evaluate_amazon_tr_with_groq,
-    snapshot_from_groq_dict,
-    telegram_body_from_groq,
-)
 from notifier import TelegramNotifier
 from scraper import AmazonScraper, ProductSnapshot
 
@@ -172,12 +165,7 @@ def format_startup_message(*, product_count: int, settings: Any) -> str:
         f"Varsayılan liste altı indirim (TL): {settings.default_alert_discount_try:.0f}\n"
         f"Uygun değilken log: {quiet}\n"
         f"Uyarı bekleme: {settings.alert_cooldown_seconds} sn\n"
-        f"Fiyat motoru: {'Groq (LLM)' if settings.use_groq_price_engine else 'Playwright (yerel tarayıcı)'}"
-        + (
-            f"\nGroq çağrı aralığı: {settings.groq_min_interval_seconds:.0f} sn"
-            if settings.use_groq_price_engine
-            else ""
-        )
+        "Fiyat motoru: Playwright (yerel tarayıcı)"
     )
 
 
@@ -264,33 +252,6 @@ def _missing_parts(snapshot: ProductSnapshot) -> str:
     return ", ".join(missing) if missing else "none"
 
 
-async def enrich_alert_message(
-    settings: Any,
-    msg: str,
-    product_name: str,
-    detail_lines: list[str],
-) -> str:
-    if not settings.groq_api_key:
-        return msg
-    try:
-        extra = await asyncio.to_thread(
-            partial(
-                generate_alert_comment,
-                api_key=settings.groq_api_key,
-                model=settings.groq_model,
-                product_name=product_name,
-                detail_lines=detail_lines,
-            )
-        )
-        if not extra:
-            return msg
-        safe = html.escape(extra)
-        return f"{msg}\n\n💡 <i>{safe}</i>"
-    except Exception as exc:
-        _log(f"[Groq] Özet atlanıyor: {exc}")
-        return msg
-
-
 async def process_product_threshold(
     *,
     scraper: AmazonScraper | None,
@@ -298,11 +259,7 @@ async def process_product_threshold(
     product: dict[str, Any],
     settings: Any,
     sent_cache: dict[str, float],
-) -> bool:
-    """
-    Groq modunda: True = sonraki ürün öncesi TPM beklemesi uygula (Groq API çağrıldı).
-    Playwright / diğer: her zaman False (dönüş yalnızca Groq döngüsünde kullanılır).
-    """
+) -> None:
     name = str(product["name"])
     url = str(product["url"])
     discount_try = _resolve_alert_discount(product, settings.default_alert_discount_try)
@@ -314,118 +271,55 @@ async def process_product_threshold(
     if use_discount and use_abs:
         use_abs = False
     if not use_discount and not use_abs:
-        return False
+        return
+    if scraper is None:
+        _log(f"[Scraper] {name}: Playwright kapalı — yapılandırma hatası")
+        return
+    try:
+        snapshot = await scraper.fetch_product(name, url)
+    except Exception as exc:
+        _log(f"[Scraper] Failed {name}: {exc}")
+        return
 
-    if settings.use_groq_price_engine:
-        if not settings.groq_api_key:
-            _log(f"[Groq] {name}: GROQ_API_KEY yok, atlanıyor")
-            return False
-        try:
-            data, groq_llm_used = await asyncio.to_thread(
-                partial(
-                    evaluate_amazon_tr_with_groq,
-                    api_key=settings.groq_api_key,
-                    model=settings.groq_model,
-                    user_agent=settings.user_agent,
-                    product_name=name,
-                    product_url=url,
-                    use_discount_rule=use_discount,
-                    use_abs_rule=use_abs,
-                    abs_try=abs_try,
-                    discount_try=discount_try,
+    _log(
+        f"[Scraper] {name}: sayfa fiyatları — en düşük: {_fmt_try(_effective_best_price(snapshot))}, "
+        f"liste/normal: {_fmt_try(snapshot.normal_price)}, ödeme/depo: {_fmt_try(snapshot.warehouse_price)}"
+    )
+
+    if use_discount:
+        savings = _discount_savings_try(snapshot)
+        if savings is None:
+            if not quiet:
+                _log(f"[Threshold] {name}: iki fiyat yok, indirim hesaplanamıyor")
+            return
+        list_ref = max(snapshot.normal_price or 0, snapshot.warehouse_price or 0)
+        pay_ref = min(snapshot.normal_price or 0, snapshot.warehouse_price or 0)
+        if savings < discount_try:
+            if not quiet:
+                _log(
+                    f"[Threshold] {name}: indirim {savings:.0f} TL < min {discount_try:.0f} TL "
+                    f"(ust={list_ref:.0f} odeme={pay_ref:.0f})"
                 )
-            )
-        except Exception as exc:
-            _log(f"[Groq] {name}: {exc}")
-            return True
-        if not data:
-            if not quiet:
-                _log(f"[Groq] {name}: boş yanıt")
-            return True
-        if not groq_llm_used:
-            _log(f"[Groq] {name}: hızlı yol (HTML’den fiyat, Groq API yok)")
-        _log(
-            f"[Groq] {name}: tahmini fiyat — net: {_fmt_try(data.get('best_price_try'))}, "
-            f"liste: {_fmt_try(data.get('list_price_try'))}"
+            return
+        msg = format_discount_alert(
+            snapshot,
+            min_discount_try=discount_try,
+            savings_try=savings,
+            list_try=list_ref,
+            pay_try=pay_ref,
         )
-        if not data.get("should_alert"):
-            if not quiet:
-                _log(f"[Groq] {name}: kural tutmadı veya emin değil")
-            return groq_llm_used
-        snapshot = snapshot_from_groq_dict(url, data)
-        msg = telegram_body_from_groq(data, use_discount=use_discount)
-        if use_discount:
-            key = _discount_alert_key(snapshot, discount_try)
-        else:
-            key = _threshold_alert_key(snapshot, abs_try)
+        key = _discount_alert_key(snapshot, discount_try)
     else:
-        if scraper is None:
-            _log(f"[Scraper] {name}: Playwright kapalı — yapılandırma hatası")
-            return False
-        try:
-            snapshot = await scraper.fetch_product(name, url)
-        except Exception as exc:
-            _log(f"[Scraper] Failed {name}: {exc}")
-            return False
-
-        _log(
-            f"[Scraper] {name}: sayfa fiyatları — en düşük: {_fmt_try(_effective_best_price(snapshot))}, "
-            f"liste/normal: {_fmt_try(snapshot.normal_price)}, ödeme/depo: {_fmt_try(snapshot.warehouse_price)}"
-        )
-
-        if use_discount:
-            savings = _discount_savings_try(snapshot)
-            if savings is None:
-                if not quiet:
-                    _log(f"[Threshold] {name}: iki fiyat yok, indirim hesaplanamıyor")
-                return False
-            list_ref = max(snapshot.normal_price or 0, snapshot.warehouse_price or 0)
-            pay_ref = min(snapshot.normal_price or 0, snapshot.warehouse_price or 0)
-            if savings < discount_try:
-                if not quiet:
-                    _log(
-                        f"[Threshold] {name}: indirim {savings:.0f} TL < min {discount_try:.0f} TL "
-                        f"(ust={list_ref:.0f} odeme={pay_ref:.0f})"
-                    )
-                return False
-            msg = format_discount_alert(
-                snapshot,
-                min_discount_try=discount_try,
-                savings_try=savings,
-                list_try=list_ref,
-                pay_try=pay_ref,
-            )
-            msg = await enrich_alert_message(
-                settings,
-                msg,
-                name,
-                [
-                    f"Başlık: {snapshot.title}",
-                    f"Üst fiyat: {list_ref:.0f} TL, ödeme: {pay_ref:.0f} TL",
-                    f"İndirim: {savings:.0f} TL (eşik: en az {discount_try:.0f} TL)",
-                ],
-            )
-            key = _discount_alert_key(snapshot, discount_try)
-        else:
-            best_price = _effective_best_price(snapshot)
-            if best_price is None:
-                _log(f"[Threshold] {name}: fiyat yok | eksik={_missing_parts(snapshot)}")
-                return False
-            if best_price > abs_try:
-                if not quiet:
-                    _log(f"[Threshold] {name}: {best_price:.0f} TL > esik {abs_try:.0f} TL")
-                return False
-            msg = format_threshold_alert(snapshot, threshold_try=abs_try, best_price=best_price)
-            msg = await enrich_alert_message(
-                settings,
-                msg,
-                name,
-                [
-                    f"Başlık: {snapshot.title}",
-                    f"En düşük fiyat: {best_price:.0f} TL, eşik: {abs_try:.0f} TL ve altı",
-                ],
-            )
-            key = _threshold_alert_key(snapshot, abs_try)
+        best_price = _effective_best_price(snapshot)
+        if best_price is None:
+            _log(f"[Threshold] {name}: fiyat yok | eksik={_missing_parts(snapshot)}")
+            return
+        if best_price > abs_try:
+            if not quiet:
+                _log(f"[Threshold] {name}: {best_price:.0f} TL > esik {abs_try:.0f} TL")
+            return
+        msg = format_threshold_alert(snapshot, threshold_try=abs_try, best_price=best_price)
+        key = _threshold_alert_key(snapshot, abs_try)
 
     now_ts = time.time()
     if not _should_send_alert(
@@ -436,7 +330,7 @@ async def process_product_threshold(
     ):
         if not quiet:
             _log(f"[Notifier] Cooldown: {name}")
-        return groq_llm_used if settings.use_groq_price_engine else False
+        return
 
     clean_url = _clean_product_url(snapshot.url)
     sent = await notifier.send(
@@ -448,7 +342,6 @@ async def process_product_threshold(
     if sent:
         sent_cache[key] = now_ts
         _log(f"[Notifier] Uyari: {name}")
-    return groq_llm_used if settings.use_groq_price_engine else False
 
 
 async def run_loop() -> None:
@@ -485,10 +378,8 @@ async def run_loop() -> None:
             _log("[Notifier] Telegram anahtarı/sohbet id eksik; bildirim atlanıyor.")
         return
 
-    scraper: AmazonScraper | None = None
-    if not settings.use_groq_price_engine:
-        scraper = AmazonScraper(user_agent=settings.user_agent)
-        await scraper.start()
+    scraper: AmazonScraper | None = AmazonScraper(user_agent=settings.user_agent)
+    await scraper.start()
     _log(f"Bot started. Tracking {len(products)} products...")
     startup_sent = await notifier.send(
         format_startup_message(product_count=len(products), settings=settings),
@@ -504,7 +395,7 @@ async def run_loop() -> None:
 
     sent_alert_cache = load_alert_cache(settings.alert_cache_file)
 
-    async def run_one_product_check(product: dict[str, Any]) -> bool:
+    async def run_one_product_check(product: dict[str, Any]) -> None:
         name = str(product.get("name", "?"))
         t0 = time.time()
         _log(f"[Kontrol] → {name}")
@@ -528,25 +419,14 @@ async def run_loop() -> None:
                 f"=== Tur #{tur} | {n} ürün | {time.strftime('%Y-%m-%d %H:%M:%S')} | "
                 f"tur sonrası bekleme {settings.check_interval} sn ==="
             )
-            if settings.use_groq_price_engine:
-                # Paralel istekler Groq ücretsiz TPM’i (dakikada ~12k token) anında doldurur; sırayla işle.
-                for i, product in enumerate(products, start=1):
-                    _log(f"[Sıra] {i}/{n} (TPM bekleme: en fazla {settings.groq_min_interval_seconds:.0f} sn, yalnız Groq API sonrası)")
-                    need_tpm_sleep = await run_one_product_check(product)
-                    if i < n and need_tpm_sleep:
-                        _log(f"[Bekle] Groq TPM için {settings.groq_min_interval_seconds:.0f} sn…")
-                        await asyncio.sleep(settings.groq_min_interval_seconds)
-                    elif i < n and not need_tpm_sleep:
-                        _log("[Bekle] atlandı (HTML hızlı yol — Groq çağrısı yok)")
-            else:
-                semaphore = asyncio.Semaphore(settings.max_concurrency)
+            semaphore = asyncio.Semaphore(settings.max_concurrency)
 
-                async def guarded(product: dict[str, Any]) -> None:
-                    async with semaphore:
-                        await run_one_product_check(product)
-                        await asyncio.sleep(random.uniform(1.0, 2.5))
+            async def guarded(product: dict[str, Any]) -> None:
+                async with semaphore:
+                    await run_one_product_check(product)
+                    await asyncio.sleep(random.uniform(1.0, 2.5))
 
-                await asyncio.gather(*(guarded(product) for product in products))
+            await asyncio.gather(*(guarded(product) for product in products))
             _prune_cache(
                 sent_cache=sent_alert_cache,
                 now_ts=time.time(),

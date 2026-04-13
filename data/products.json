@@ -1,100 +1,72 @@
 [
   {
-    "name": "Apple iPhone 17",
-    "url": "https://www.amazon.com.tr/s?k=Apple+iPhone+17",
+    "name": "Apple iPhone 16 Pro Max",
+    "url": "https://www.amazon.com.tr/dp/B0DGJTCP26",
     "alert_discount_below_normal_try": 10000
   },
   {
     "name": "Apple iPhone 16 Pro",
-    "url": "https://www.amazon.com.tr/s?k=Apple+iPhone+16+Pro",
+    "url": "https://www.amazon.com.tr/dp/B0DGJQXCTP",
+    "alert_discount_below_normal_try": 10000
+  },
+  {
+    "name": "Apple iPhone 16 Plus",
+    "url": "https://www.amazon.com.tr/dp/B0DGJ5GWT4",
     "alert_discount_below_normal_try": 10000
   },
   {
     "name": "Apple iPhone 16",
-    "url": "https://www.amazon.com.tr/s?k=Apple+iPhone+16",
+    "url": "https://www.amazon.com.tr/dp/B0DGJJPYGP",
+    "alert_discount_below_normal_try": 10000
+  },
+  {
+    "name": "Apple iPhone 15 Pro Max",
+    "url": "https://www.amazon.com.tr/dp/B0FQFLV8YG",
     "alert_discount_below_normal_try": 10000
   },
   {
     "name": "Apple iPhone 15 Pro",
-    "url": "https://www.amazon.com.tr/s?k=Apple+iPhone+15+Pro",
+    "url": "https://www.amazon.com.tr/dp/B0CHXRNHC4",
+    "alert_discount_below_normal_try": 10000
+  },
+  {
+    "name": "Apple iPhone 15 Plus",
+    "url": "https://www.amazon.com.tr/dp/B0CHXKJWLB",
     "alert_discount_below_normal_try": 10000
   },
   {
     "name": "Apple iPhone 15",
-    "url": "https://www.amazon.com.tr/s?k=Apple+iPhone+15",
+    "url": "https://www.amazon.com.tr/dp/B0CHXGB3NG",
+    "alert_discount_below_normal_try": 10000
+  },
+  {
+    "name": "Apple iPhone 14 Plus",
+    "url": "https://www.amazon.com.tr/dp/B0BDJ49R77",
     "alert_discount_below_normal_try": 10000
   },
   {
     "name": "Apple iPhone 14",
-    "url": "https://www.amazon.com.tr/s?k=Apple+iPhone+14",
+    "url": "https://www.amazon.com.tr/dp/B0BDHTPJ8G",
     "alert_discount_below_normal_try": 10000
   },
   {
-    "name": "Apple AirPods Pro 2",
-    "url": "https://www.amazon.com.tr/s?k=Apple+AirPods+Pro+2"
+    "name": "Apple iPhone 13",
+    "url": "https://www.amazon.com.tr/dp/B09G9RGQ6T",
+    "alert_discount_below_normal_try": 10000
   },
   {
-    "name": "Apple AirPods 4",
-    "url": "https://www.amazon.com.tr/s?k=Apple+AirPods+4"
+    "name": "Apple iPhone 12",
+    "url": "https://www.amazon.com.tr/dp/B09G9RQTP3",
+    "alert_discount_below_normal_try": 10000
   },
   {
-    "name": "Apple AirPods Max",
-    "url": "https://www.amazon.com.tr/s?k=Apple+AirPods+Max"
+    "name": "Apple iPhone 11",
+    "url": "https://www.amazon.com.tr/dp/B0CS9S4744",
+    "alert_discount_below_normal_try": 10000
   },
   {
-    "name": "Apple Watch Series 10",
-    "url": "https://www.amazon.com.tr/s?k=Apple+Watch+Series+10"
-  },
-  {
-    "name": "Apple Watch Ultra 2",
-    "url": "https://www.amazon.com.tr/s?k=Apple+Watch+Ultra+2"
-  },
-  {
-    "name": "Apple Watch SE",
-    "url": "https://www.amazon.com.tr/s?k=Apple+Watch+SE"
-  },
-  {
-    "name": "Apple iPad Pro M4",
-    "url": "https://www.amazon.com.tr/s?k=Apple+iPad+Pro+M4"
-  },
-  {
-    "name": "Apple iPad Air M2",
-    "url": "https://www.amazon.com.tr/s?k=Apple+iPad+Air+M2"
-  },
-  {
-    "name": "Apple iPad 10. Nesil",
-    "url": "https://www.amazon.com.tr/s?k=Apple+iPad+10+Nesil"
-  },
-  {
-    "name": "Apple iPad Mini",
-    "url": "https://www.amazon.com.tr/s?k=Apple+iPad+Mini"
-  },
-  {
-    "name": "Apple MacBook Air M3",
-    "url": "https://www.amazon.com.tr/s?k=Apple+MacBook+Air+M3"
-  },
-  {
-    "name": "Apple MacBook Pro M3",
-    "url": "https://www.amazon.com.tr/s?k=Apple+MacBook+Pro+M3"
-  },
-  {
-    "name": "Apple iMac",
-    "url": "https://www.amazon.com.tr/s?k=Apple+iMac"
-  },
-  {
-    "name": "Apple Mac Mini",
-    "url": "https://www.amazon.com.tr/s?k=Apple+Mac+Mini"
-  },
-  {
-    "name": "Apple Studio Display",
-    "url": "https://www.amazon.com.tr/s?k=Apple+Studio+Display"
-  },
-  {
-    "name": "Apple TV 4K",
-    "url": "https://www.amazon.com.tr/s?k=Apple+TV+4K"
-  },
-  {
-    "name": "Apple HomePod Mini",
-    "url": "https://www.amazon.com.tr/s?k=Apple+HomePod+Mini"
+    "name": "Apple iPhone SE 3",
+    "url": "https://www.amazon.com.tr/dp/B099ML7RB4",
+    "alert_discount_below_normal_try": 10000
   }
 ]

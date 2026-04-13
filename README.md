@@ -14,8 +14,6 @@ playwright install chromium
 `.env.example` dosyasını `.env` olarak kopyalayıp doldurun. Sohbet kimliği için: `py scripts/find_telegram_chat.py`  
 Birden fazla hedefe bildirim için `.env` içinde `TELEGRAM_CHAT_IDS=111,222` kullanabilirsiniz (tek hedef için `TELEGRAM_CHAT_ID` da desteklenir).
 
-İsteğe bağlı **`GROQ_API_KEY`**: doluysa (Playwright uyarılarında) her uyarıya Groq ile 1–2 cümle Türkçe özet eklenir.
-
 ## Çalıştırma
 
 Proje kökünden:
