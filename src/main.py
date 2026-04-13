@@ -292,6 +292,26 @@ def _is_relevant_listing(product_name: str, snapshot_title: str) -> bool:
         return False
     if any(token in st for token in ACCESSORY_TOKENS):
         return False
+    if "iphone" in pn:
+        def sig(s: str) -> tuple[str, str] | None:
+            if "iphone se" in s:
+                return ("se", "se")
+            m = re.search(r"iphone\s*(\d{2})", s)
+            if not m:
+                return None
+            gen = m.group(1)
+            if "pro max" in s:
+                return (gen, "pro_max")
+            if re.search(r"\bpro\b", s):
+                return (gen, "pro")
+            if re.search(r"\bplus\b", s):
+                return (gen, "plus")
+            return (gen, "base")
+
+        target = sig(pn)
+        current = sig(st)
+        if target is not None and current is not None and target != current:
+            return False
     return True
 
 
@@ -311,6 +331,8 @@ def _sanitize_snapshot_prices(product_name: str, snapshot: ProductSnapshot) -> P
         normal_price=None,
         warehouse_condition=snapshot.warehouse_condition,
         image_url=snapshot.image_url,
+        sold_by_amazon=snapshot.sold_by_amazon,
+        shipped_by_amazon=snapshot.shipped_by_amazon,
         normal_price_source_count=snapshot.normal_price_source_count,
         warehouse_price_source_count=snapshot.warehouse_price_source_count,
         condition_confidence=snapshot.condition_confidence,
@@ -347,6 +369,12 @@ async def process_product_threshold(
         return
     if not _is_relevant_listing(name, snapshot.title):
         _log(f"[Filter] {name}: alakasız ürün eşleşmesi atlandı | başlık={snapshot.title}")
+        return
+    if snapshot.sold_by_amazon is not True or snapshot.shipped_by_amazon is not True:
+        _log(
+            f"[Filter] {name}: satıcı/gönderici Amazon değil | "
+            f"sold_by_amazon={snapshot.sold_by_amazon} shipped_by_amazon={snapshot.shipped_by_amazon}"
+        )
         return
     snapshot = _sanitize_snapshot_prices(name, snapshot)
 

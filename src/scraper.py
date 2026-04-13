@@ -11,6 +11,49 @@ from playwright.async_api import Browser, Page, async_playwright
 MONEY_RE = re.compile(r"([\d\.,]+)")
 CONDITION_RE = re.compile(r"(like new|very good|good|acceptable)", re.IGNORECASE)
 ASIN_RE = re.compile(r"/dp/([A-Z0-9]{10})", re.IGNORECASE)
+ACCESSORY_RE = re.compile(
+    r"(kılıf|kilif|case|cover|ekran koruyucu|tempered|charger|şarj|sarj|kablo)",
+    re.IGNORECASE,
+)
+
+
+def _normalize_text(s: str) -> str:
+    x = (s or "").lower()
+    for k, v in {"ı": "i", "ğ": "g", "ü": "u", "ş": "s", "ö": "o", "ç": "c"}.items():
+        x = x.replace(k, v)
+    return re.sub(r"\s+", " ", x).strip()
+
+
+def _iphone_signature(s: str) -> tuple[str, str] | None:
+    t = _normalize_text(s)
+    if "iphone" not in t:
+        return None
+    if "iphone se" in t:
+        return ("se", "se")
+    m = re.search(r"iphone\s*(\d{2})", t)
+    if not m:
+        return None
+    gen = m.group(1)
+    if "pro max" in t:
+        return (gen, "pro_max")
+    if re.search(r"\bpro\b", t):
+        return (gen, "pro")
+    if re.search(r"\bplus\b", t):
+        return (gen, "plus")
+    return (gen, "base")
+
+
+def _title_matches_target_model(*, target_name: str, title: str) -> bool:
+    st = _normalize_text(title)
+    if not st or "iphone" not in st or ACCESSORY_RE.search(st):
+        return False
+    target = _iphone_signature(target_name)
+    if target is None:
+        return True
+    cand = _iphone_signature(title)
+    if cand is None:
+        return False
+    return cand == target
 
 
 @dataclass(frozen=True)
@@ -21,6 +64,8 @@ class ProductSnapshot:
     normal_price: Optional[float]
     warehouse_condition: Optional[str]
     image_url: Optional[str]
+    sold_by_amazon: Optional[bool]
+    shipped_by_amazon: Optional[bool]
     normal_price_source_count: int
     warehouse_price_source_count: int
     condition_confidence: int
@@ -86,6 +131,39 @@ def _extract_prices_from_scripts(html: str) -> list[float]:
     return prices
 
 
+def _extract_amazon_party_flags(soup: BeautifulSoup) -> tuple[Optional[bool], Optional[bool]]:
+    selectors = [
+        "#merchantInfo",
+        "#tabular-buybox-container",
+        "#exports_desktop_merchant_info_feature_div",
+        "#tabular_feature_div",
+        "#desktop_qualifiedBuyBox",
+    ]
+    blobs: list[str] = []
+    for sel in selectors:
+        node = soup.select_one(sel)
+        if node:
+            blobs.append(node.get_text(" ", strip=True))
+    text = _normalize_text(" | ".join(blobs))
+    if not text:
+        return None, None
+
+    sold_by_amazon: Optional[bool] = None
+    shipped_by_amazon: Optional[bool] = None
+
+    if any(p in text for p in ("satıcı", "sold by", "satici")):
+        sold_by_amazon = "amazon" in text
+    elif "amazon satıcısından" in text:
+        sold_by_amazon = True
+
+    if any(p in text for p in ("gonderici", "gonderim", "fulfilled by", "ships from")):
+        shipped_by_amazon = "amazon" in text
+    elif any(p in text for p in ("amazon tarafindan gonderilir", "amazon gonderimli")):
+        shipped_by_amazon = True
+
+    return sold_by_amazon, shipped_by_amazon
+
+
 class AmazonScraper:
     def __init__(self, *, user_agent: str) -> None:
         self.user_agent = user_agent
@@ -133,6 +211,8 @@ class AmazonScraper:
                     await page.goto(variant_url, wait_until="domcontentloaded", timeout=45_000)
                     v_html = await page.content()
                     v_snap = self._extract(name=name, url=variant_url, html=v_html)
+                    if not _title_matches_target_model(target_name=name, title=v_snap.title):
+                        continue
                     snapshot = self._merge_snapshots(primary=snapshot, fallback=v_snap)
                 except Exception:
                     continue
@@ -171,6 +251,12 @@ class AmazonScraper:
             normal_price=primary.normal_price if primary.normal_price is not None else fallback.normal_price,
             warehouse_condition=primary.warehouse_condition or fallback.warehouse_condition,
             image_url=primary.image_url or fallback.image_url,
+            sold_by_amazon=(
+                primary.sold_by_amazon if primary.sold_by_amazon is not None else fallback.sold_by_amazon
+            ),
+            shipped_by_amazon=(
+                primary.shipped_by_amazon if primary.shipped_by_amazon is not None else fallback.shipped_by_amazon
+            ),
             normal_price_source_count=primary.normal_price_source_count + fallback.normal_price_source_count,
             warehouse_price_source_count=primary.warehouse_price_source_count + fallback.warehouse_price_source_count,
             condition_confidence=max(primary.condition_confidence, fallback.condition_confidence),
@@ -297,6 +383,7 @@ class AmazonScraper:
             if condition_hint:
                 warehouse_condition = condition_hint.strip()
                 condition_confidence = 55
+        sold_by_amazon, shipped_by_amazon = _extract_amazon_party_flags(soup)
 
         return ProductSnapshot(
             title=title,
@@ -305,6 +392,8 @@ class AmazonScraper:
             normal_price=normal_price,
             warehouse_condition=warehouse_condition,
             image_url=image_url,
+            sold_by_amazon=sold_by_amazon,
+            shipped_by_amazon=shipped_by_amazon,
             normal_price_source_count=normal_price_source_count,
             warehouse_price_source_count=warehouse_price_source_count,
             condition_confidence=condition_confidence,
